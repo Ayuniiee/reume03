@@ -109,47 +109,46 @@ def upload():
         # Submit Button
         submitted = st.form_submit_button("Upload Job Listing")
 
-       # Form Submission Logic
-        if submitted:
-            # Validate Required Fields
-            if not job_title or not job_description:
-                st.error("Job Title and Description are required.")
-                return
+    if submitted:
+        # Validate Required Fields
+        if not job_title or not job_description:
+            st.error("Job Title and Description are required.")
+            return
 
-            # Database Insertion
-            try:
-                data = {
-                    "parent_email": parent_email,
-                    "full_name": full_name,
-                    "phone_number": phone_number,
-                    "city": city,
-                    "state": state,
-                    "detailed_address": detailed_address,
-                    "preferred_contact": preferred_contact,
-                    "job_title": job_title,
-                    "job_description": job_description,
-                    "preferred_start_date": preferred_start_date.strftime("%Y-%m-%d"),
-                    "job_frequency": job_frequency,
-                    "required_skills": required_skills,
-                    "educational_background": educational_background,
-                    "age_range": age_range,
-                    "hourly_rate": hourly_rate,
-                    "rate_negotiable": rate_negotiable,
-                    "job_subject": job_subject,
-                    "special_conditions": special_conditions
-                }
+        # Database Insertion
+        try:
+            data = {
+                "parent_email": parent_email,
+                "full_name": full_name,
+                "phone_number": phone_number,
+                "city": city,
+                "state": state,
+                "detailed_address": detailed_address,
+                "preferred_contact": preferred_contact,
+                "job_title": job_title,
+                "job_description": job_description,
+                "preferred_start_date": preferred_start_date.strftime("%Y-%m-%d"),
+                "job_frequency": job_frequency,
+                "required_skills": required_skills,
+                "educational_background": educational_background,
+                "age_range": age_range,
+                "hourly_rate": hourly_rate,
+                "rate_negotiable": rate_negotiable,
+                "job_subject": job_subject,
+                "special_conditions": special_conditions
+            }
 
-                response = supabase.table("job_listings").insert(data).execute()
+            response = supabase.table("job_listings").insert(data).execute()
 
-                # Check the response status directly
-                if response.status_code == 201:
-                    st.success("Job Listing Uploaded Successfully!")
-                    st.balloons()
-                else:
-                    st.error(f"Error uploading job listing: {response.message}")
+            # Check the response for errors
+            if response.error is None:
+                st.success("Job Listing Uploaded Successfully!")
+                st.balloons()
+            else:
+                st.error(f"Error uploading job listing: {response.error.message}")
 
-            except Exception as e:
-                st.error(f"Error uploading job listing: {e}")
+        except Exception as e:
+            st.error(f"Error uploading job listing: {e}")
 
 # Ensure this is only run when the script is directly executed
 if __name__ == "__main__":
