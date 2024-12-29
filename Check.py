@@ -178,9 +178,10 @@ def extract_keywords_from_resume(resume_text):
 
 def show_pdf(file_path):
     with open(file_path, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
+        pdf_data = f.read()
+        b64_pdf = base64.b64encode(pdf_data).decode('utf-8')
+        href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="resume.pdf">Download PDF</a>'
+        st.markdown(href, unsafe_allow_html=True)
 
 def recommend_jobs_from_database(keywords):
     recommended_jobs = []
