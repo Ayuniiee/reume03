@@ -109,7 +109,7 @@ def upload():
         # Submit Button
         submitted = st.form_submit_button("Upload Job Listing")
 
-        # Form Submission Logic
+       # Form Submission Logic
         if submitted:
             # Validate Required Fields
             if not job_title or not job_description:
@@ -141,11 +141,12 @@ def upload():
 
                 response = supabase.table("job_listings").insert(data).execute()
 
-                if response.get("status_code") == 201:
+                # Check the response status directly
+                if response.status_code == 201:
                     st.success("Job Listing Uploaded Successfully!")
                     st.balloons()
                 else:
-                    st.error(f"Error uploading job listing: {response.get('message')}")
+                    st.error(f"Error uploading job listing: {response.message}")
 
             except Exception as e:
                 st.error(f"Error uploading job listing: {e}")
