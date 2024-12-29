@@ -86,14 +86,6 @@ def signup():
         text-shadow: 1px 1px 2px black;
     }}
     
-    /* Container for the form */
-    .form-container {{
-        background-color: rgba(0, 0, 0, 0.6);
-        padding: 20px;
-        border-radius: 10px;
-        margin: 0 auto;
-        max-width: 800px;
-    }}
     </style>
     """,
     unsafe_allow_html=True
