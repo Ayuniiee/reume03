@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import error handling and other modules
 try:
-    from Home_test import home
+    from home_test import home
     from pages.login_test import login
     from pages.sign_test import signup
     from feedback import feedback
