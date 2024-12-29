@@ -37,7 +37,7 @@ def render_stars(rating):
     """
     full_star = "★"
     empty_star = "☆"
-    stars = full_star * rating + empty_star * (5 - rating)
+    stars = full_star * int(rating) + empty_star * (5 - int(rating))
     return f"<span style='color: gold; font-size: 20px;'>{stars}</span>"
 
 def submit_feedback(supabase, full_name, user_email, rating, comment):
@@ -53,7 +53,7 @@ def submit_feedback(supabase, full_name, user_email, rating, comment):
             "created_at": datetime.now().isoformat()
         }
         response = supabase.table("feedback").insert(data).execute()
-        return response.status_code == 201
+        return hasattr(response, 'data')  # Check if response has data attribute
     except Exception as e:
         st.error(f"Error submitting feedback: {e}")
         return False
@@ -63,8 +63,8 @@ def fetch_feedbacks(supabase):
     Fetch all feedbacks from the database
     """
     try:
-        response = supabase.table("feedback").select("*").order("created_at", desc=True).execute()
-        return response.data if response.status_code == 200 else []
+        response = supabase.table("feedback").select("*").order('created_at', desc=True).execute()
+        return response.data if hasattr(response, 'data') else []
     except Exception as e:
         st.error(f"Error fetching feedbacks: {e}")
         return []
@@ -80,8 +80,16 @@ def feedback():
     if st.session_state.get("logged_in", False):
         st.subheader("📝 Share Your Experience")
         
+        # Get user details from session state
         user_email = st.session_state.get("email", "")
-        full_name = st.session_state.get("full_name", "")
+        
+        # Fetch full name from users table
+        try:
+            user_response = supabase.table("users").select("full_name").eq("email", user_email).single().execute()
+            full_name = user_response.data.get('full_name', '') if user_response.data else ''
+        except Exception as e:
+            st.error(f"Error fetching user details: {e}")
+            full_name = ""
 
         st.write(f"**👤 Name:** {full_name}")
         st.write(f"**📧 Email:** {user_email}")
@@ -93,14 +101,20 @@ def feedback():
             if rating > 0:
                 if submit_feedback(supabase, full_name, user_email, rating, comment):
                     st.success("🎉 Thank you for your valuable feedback!")
+                    # Clear the form after successful submission
+                    st.session_state["current_rating"] = 3  # Reset rating
+                    st.rerun()  # Using st.rerun() instead of experimental_rerun
             else:
                 st.warning("⚠️ Please select a rating.")
     else:
         st.info("👋 Please log in to share your experience!")
 
     # Fetch and display feedbacks
-    feedbacks = fetch_feedbacks(supabase)
     st.markdown("---")
+    st.subheader("📢 Community Feedback")
+    
+    feedbacks = fetch_feedbacks(supabase)
+    
     if feedbacks:
         for feedback in feedbacks:
             col1, col2 = st.columns([3, 1])
@@ -109,7 +123,9 @@ def feedback():
             with col2:
                 st.markdown(render_stars(feedback['rating']), unsafe_allow_html=True)
             st.markdown(f"<div>{feedback['comment']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='color: #666;'>🕒 {feedback['created_at']}</div>", unsafe_allow_html=True)
+            created_at = datetime.fromisoformat(feedback['created_at'].replace('Z', '+00:00'))
+            formatted_date = created_at.strftime("%Y-%m-%d %H:%M")
+            st.markdown(f"<div style='color: #666;'>🕒 {formatted_date}</div>", unsafe_allow_html=True)
             st.markdown("---")
     else:
         st.info("📝 No feedbacks yet. Be the first to share your experience!")
