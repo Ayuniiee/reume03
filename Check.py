@@ -14,14 +14,12 @@ from Courses import resume_videos, interview_videos
 from keywords import it_keywords, software_keywords, multimedia_keywords, science_keywords, math_keywords
 import spacy
 
-def init_supabase():
-    try:
-        supabase_url = st.secrets["SUPABASE_URL"]
-        supabase_key = st.secrets["SUPABASE_KEY"]
-        return create_client(supabase_url, supabase_key)
-    except Exception as e:
-        st.error(f"Failed to initialize Supabase client: {e}")
-        st.stop()
+# Replace with your actual Supabase project details
+SUPABASE_URL = "https://zccnwnfslnafqkwfynjg.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjY253bmZzbG5hZnFrd2Z5bmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUyMTc3NDEsImV4cCI6MjA1MDc5Mzc0MX0.NuDDOv7NabiRQywA58klp17As7FM-n4hZzNPW8vJb2Y"
+
+# Initialize the Supabase client
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
 def setup_spacy():
     """Setup spaCy with proper model loading"""
