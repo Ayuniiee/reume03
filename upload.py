@@ -2,18 +2,17 @@ import streamlit as st
 from supabase import create_client
 from datetime import datetime
 import os
+from supabase import create_client
 
-def create_supabase_client():
-    try:
-        supabase_url = st.secrets["SUPABASE_URL"]
-        supabase_key = st.secrets["SUPABASE_KEY"]
-        return create_client(supabase_url, supabase_key)
-    except Exception as e:
-        st.error(f"Failed to initialize Supabase client: {e}")
-        st.stop()
+# Replace with your actual Supabase project details
+SUPABASE_URL = "https://zccnwnfslnafqkwfynjg.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjY253bmZzbG5hZnFrd2Z5bmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUyMTc3NDEsImV4cCI6MjA1MDc5Mzc0MX0.NuDDOv7NabiRQywA58klp17As7FM-n4hZzNPW8vJb2Y"
+
+# Initialize the Supabase client
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def upload():
-    st.title("\ud83d\udcc4 Job Listing Upload")
+    st.title("📄 Job Listing Upload")
 
     # Check login status and user type
     if not st.session_state.get("logged_in"):
@@ -26,19 +25,17 @@ def upload():
 
     # Fetch parent's details from session state and database
     parent_email = st.session_state.get("email")
-    supabase = create_supabase_client()
 
     parent_details = None
-
     try:
         response = supabase.table("users").select("*").eq("email", parent_email).single().execute()
-        if response.get("data"):
-            parent_details = response["data"]
+        parent_details = response.data  # Access the data directly
+
+        if parent_details is None:
+            st.error("No user found with this email.")
+            return
     except Exception as e:
         st.error(f"Error fetching parent details: {e}")
-
-    if not parent_details:
-        st.error("Unable to retrieve parent information.")
         return
 
     # Job Upload Form
