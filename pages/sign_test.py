@@ -102,9 +102,6 @@ def signup():
     # Title Container
     st.markdown('<div class="title-container"><span class="welcome-text">Welcome to</span><span class="edu-title">EduResume</span></div>', unsafe_allow_html=True)
 
-    # Form Container
-    st.markdown('<div class="form-container">', unsafe_allow_html=True)
-
     # Create columns for better layout
     col1, col2 = st.columns(2)
 
@@ -176,8 +173,6 @@ def signup():
 
         except Exception as e:
             st.error(f"Registration error: {e}")
-
-    st.markdown('</div>', unsafe_allow_html=True)  # Close form container
 
 if __name__ == "__main__":
     signup()
