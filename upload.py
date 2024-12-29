@@ -2,7 +2,6 @@ import streamlit as st
 from supabase import create_client
 from datetime import datetime
 import os
-from supabase import create_client
 
 # Replace with your actual Supabase project details
 SUPABASE_URL = "https://zccnwnfslnafqkwfynjg.supabase.co"
@@ -135,18 +134,19 @@ def upload():
                 "hourly_rate": hourly_rate,
                 "rate_negotiable": rate_negotiable,
                 "job_subject": job_subject,
-                "special_conditions": special_conditions
+                "special_conditions": special_conditions,
+                "created_at": datetime.utcnow().isoformat()  # Add creation timestamp
             }
 
+            # Updated error handling for Supabase response
             response = supabase.table("job_listings").insert(data).execute()
-
-            # Check the response for errors
-            if response.error is None:
+            
+            if hasattr(response, 'data'):
                 st.success("Job Listing Uploaded Successfully!")
                 st.balloons()
             else:
-                st.error(f"Error uploading job listing: {response.error.message}")
-
+                st.error(f"Error uploading job listing: Unexpected response format")
+                
         except Exception as e:
             st.error(f"Error uploading job listing: {e}")
 
