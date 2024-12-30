@@ -16,7 +16,6 @@ def fetch_applications(user_email):
     """Fetch all applications for jobs posted by the parent"""
     supabase = create_supabase_client()
     try:
-        # Updated select statement with correct column references
         response = (
             supabase
             .table("job_applications")
@@ -53,13 +52,33 @@ def update_application_status(application_id, status):
         return False
 
 def download_resume(resume_path):
-    """Handle resume download"""
+    """Handle resume download with improved error handling"""
+    if not resume_path:
+        return None
+        
+    supabase = create_supabase_client()
     try:
-        supabase = create_supabase_client()
+        # First check if the bucket exists
+        buckets = supabase.storage.list_buckets()
+        if not any(bucket.name == "resumes" for bucket in buckets):
+            st.error("Storage bucket 'resumes' not found. Please configure your storage settings.")
+            return None
+
+        # Then check if the file exists
+        try:
+            file_info = supabase.storage.from_("resumes").list(path=os.path.dirname(resume_path))
+            if not any(file.name == os.path.basename(resume_path) for file in file_info):
+                st.warning(f"Resume file not found: {resume_path}")
+                return None
+        except Exception as e:
+            st.warning(f"Unable to verify resume file: {e}")
+            return None
+
+        # If all checks pass, try to download
         response = supabase.storage.from_("resumes").download(resume_path)
         return response
     except Exception as e:
-        st.error(f"Error downloading resume: {e}")
+        st.error(f"Error accessing storage: {e}")
         return None
 
 def application_overview():
@@ -98,6 +117,10 @@ def application_overview():
                                 mime="application/pdf",
                                 key=f"download_{app['id']}"
                             )
+                        else:
+                            st.write("Resume unavailable")
+                    else:
+                        st.write("No resume uploaded")
                 with col5:
                     status = app.get('status', 'Pending')
                     st.write(f"**Status:** {status}")
@@ -105,11 +128,11 @@ def application_overview():
                         if st.button("Accept", key=f"accept_{app['id']}"):
                             if update_application_status(app['id'], "Accepted"):
                                 st.success("Application accepted!")
-                                st.rerun()  # Updated from experimental_rerun
+                                st.rerun()
                         if st.button("Reject", key=f"reject_{app['id']}"):
                             if update_application_status(app['id'], "Rejected"):
                                 st.success("Application rejected!")
-                                st.rerun()  # Updated from experimental_rerun
+                                st.rerun()
                 st.divider()
     else:
         st.info("No applications found for your jobs.")

@@ -46,14 +46,27 @@ def save_uploaded_resume(uploaded_file):
         return file_path
     return None
 
-def display_pdf(file_path):
+def create_download_link(file_path):
+    """Create a download link for the uploaded PDF file"""
     try:
         with open(file_path, "rb") as f:
-            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
+            pdf_data = f.read()
+            b64_pdf = base64.b64encode(pdf_data).decode('utf-8')
+            
+        file_name = os.path.basename(file_path)
+        st.download_button(
+            label="Download Resume",
+            data=pdf_data,
+            file_name=file_name,
+            mime="application/pdf"
+        )
     except Exception as e:
-        st.error(f"Error displaying PDF: {e}")
+        st.error(f"Error creating download link: {e}")
+
+# Replace the display_pdf function with this one
+def display_pdf(file_path):
+    st.write("Resume uploaded successfully!")
+    create_download_link(file_path)
 
 def change_step(step_number):
     st.session_state.step = step_number

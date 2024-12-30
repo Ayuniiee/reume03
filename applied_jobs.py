@@ -17,17 +17,23 @@ def fetch_applied_jobs(user_id):
         return []
 
     try:
-        # Using Supabase's query builder to join tables and fetch data
+        # Convert user_id to integer
+        user_id_int = int(user_id)
+        
         response = supabase.rpc(
-            'get_applied_jobs',  # Name of the stored procedure we'll create
-            {'user_id_param': user_id}
+            'get_applied_jobs',
+            {'user_id_param': user_id_int}
         ).execute()
 
-        if response.data:
-            return response.data
+        if hasattr(response, 'data'):
+            return response.data or []
+        return []
+    except ValueError:
+        st.error("Invalid user ID format")
         return []
     except Exception as e:
-        st.error(f"Error fetching jobs: {e}")
+        st.error(f"Error fetching jobs: {str(e)}")
+        print(f"Detailed error: {e}")
         return []
 
 def main():
