@@ -58,7 +58,7 @@ def job_list():
                 unsafe_allow_html=True
             )
         else:
-            st.warning("Status information is not available.")  # Fallback if `is_active` doesn't exist
+            st.warning("Status information is not available.")
 
         col1, col2 = st.columns(2)
         with col1:
@@ -81,7 +81,7 @@ def job_list():
             try:
                 supabase.from_("job_listings").update({"is_active": new_status}).eq("id", job["id"]).execute()
                 st.success(f"Job status updated to {'Active' if new_status else 'Inactive'}.")
-                st.experimental_rerun()
+                st.experimental_rerun()  # This line should be correct
             except Exception as e:
                 st.error(f"Error updating job status: {e}")
 
@@ -90,7 +90,7 @@ def job_list():
             try:
                 supabase.from_("job_listings").delete().eq("id", job["id"]).execute()
                 st.success("Job deleted successfully.")
-                st.experimental_rerun()
+                st.experimental_rerun()  # This line should be correct
             except Exception as e:
                 st.error(f"Error deleting job: {e}")
 
