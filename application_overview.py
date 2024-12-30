@@ -16,14 +16,19 @@ def fetch_applications(user_email):
     """Fetch all applications for jobs posted by the parent"""
     supabase = create_supabase_client()
     try:
+        # Updated select statement with correct column references
         response = (
             supabase
-            .from_("job_applications")
-            .select("id as application_id, job_listings(job_title, job_subject), users(full_name), resume_path, status")
+            .table("job_applications")
+            .select(
+                "id, status, resume_path, created_at, " +
+                "job_listings(job_title, job_subject, parent_email), " +
+                "users(full_name)"
+            )
             .eq("job_listings.parent_email", user_email)
             .execute()
         )
-        return response.get("data", [])
+        return response.data if hasattr(response, 'data') else []
     except Exception as e:
         st.error(f"Error fetching applications: {e}")
         return []
@@ -34,12 +39,15 @@ def update_application_status(application_id, status):
     try:
         response = (
             supabase
-            .from_("job_applications")
-            .update({"status": status, "updated_at": datetime.now().isoformat()})
+            .table("job_applications")
+            .update({
+                "status": status,
+                "updated_at": datetime.now().isoformat()
+            })
             .eq("id", application_id)
             .execute()
         )
-        return response.get("status_code") == 204
+        return hasattr(response, 'data')
     except Exception as e:
         st.error(f"Error updating application status: {e}")
         return False
@@ -47,10 +55,9 @@ def update_application_status(application_id, status):
 def download_resume(resume_path):
     """Handle resume download"""
     try:
-        # Simulate downloading from Supabase Storage
         supabase = create_supabase_client()
         response = supabase.storage.from_("resumes").download(resume_path)
-        return response.content
+        return response
     except Exception as e:
         st.error(f"Error downloading resume: {e}")
         return None
@@ -71,50 +78,41 @@ def application_overview():
 
     if applications:
         for app in applications:
-            app_id = app["application_id"]
-            job_title = app["job_listings"]["job_title"]
-            job_subject = app["job_listings"]["job_subject"]
-            full_name = app["users"]["full_name"]
-            resume_path = app.get("resume_path")
-            status = app.get("status", "Pending")
-
             with st.container():
                 col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 3])
 
                 with col1:
-                    st.write(f"**Name:** {full_name}")
+                    st.write(f"**Name:** {app['users']['full_name']}")
                 with col2:
-                    st.write(f"**Job Title:** {job_title}")
+                    st.write(f"**Job Title:** {app['job_listings']['job_title']}")
                 with col3:
-                    st.write(f"**Subject:** {job_subject}")
+                    st.write(f"**Subject:** {app['job_listings']['job_subject']}")
                 with col4:
-                    if resume_path:
-                        resume_content = download_resume(resume_path)
+                    if app.get('resume_path'):
+                        resume_content = download_resume(app['resume_path'])
                         if resume_content:
                             st.download_button(
                                 label="Download Resume",
                                 data=resume_content,
-                                file_name=f"resume_{full_name}.pdf",
+                                file_name=f"resume_{app['users']['full_name']}.pdf",
                                 mime="application/pdf",
-                                key=f"download_{app_id}"
+                                key=f"download_{app['id']}"
                             )
                 with col5:
+                    status = app.get('status', 'Pending')
                     st.write(f"**Status:** {status}")
                     if status == 'Pending':
-                        if st.button("Accept", key=f"accept_{app_id}"):
-                            if update_application_status(app_id, "Accepted"):
+                        if st.button("Accept", key=f"accept_{app['id']}"):
+                            if update_application_status(app['id'], "Accepted"):
                                 st.success("Application accepted!")
-                                st.experimental_rerun()
-                        if st.button("Reject", key=f"reject_{app_id}"):
-                            if update_application_status(app_id, "Rejected"):
+                                st.rerun()  # Updated from experimental_rerun
+                        if st.button("Reject", key=f"reject_{app['id']}"):
+                            if update_application_status(app['id'], "Rejected"):
                                 st.success("Application rejected!")
-                                st.experimental_rerun()
+                                st.rerun()  # Updated from experimental_rerun
                 st.divider()
     else:
         st.info("No applications found for your jobs.")
 
-def main():
-    application_overview()
-
 if __name__ == "__main__":
-    main()
+    application_overview()
