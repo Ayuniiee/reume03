@@ -249,7 +249,7 @@ def main():
                 st.rerun()
             
             # User-specific buttons
-            if st.session_state.get("user_type", "").lower() == "user":
+            if st.session_state.get("user_type", "").lower() == "tutor":
                 if st.button("☰  Check", key="check_button", use_container_width=True):
                     st.session_state["page"] = "check"
                     st.rerun()

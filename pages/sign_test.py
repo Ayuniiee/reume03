@@ -105,7 +105,7 @@ def signup():
     with col2:
         password = st.text_input("Password", placeholder="Create a password", type="password")
         confirm_password = st.text_input("Confirm Password", placeholder="Confirm your password", type="password")
-        user_type = st.selectbox("User Type", ["", "User", "Parent"])
+        user_type = st.selectbox("User Type", ["Tutor", "Parent"])
 
     # Signup button
     if st.button("Sign Up", key="signup_submit"):
