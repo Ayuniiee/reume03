@@ -90,7 +90,7 @@ def job_list():
             try:
                 supabase.from_("job_listings").delete().eq("id", job["id"]).execute()
                 st.success("Job deleted successfully.")
-                st.experimental_rerun()  # This line should be correct
+                st.rerun()  # This line should be correct
             except Exception as e:
                 st.error(f"Error deleting job: {e}")
 
