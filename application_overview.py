@@ -51,35 +51,6 @@ def update_application_status(application_id, status):
         st.error(f"Error updating application status: {e}")
         return False
 
-def validate_resume_path(resume_path):
-    """Validate if the resume file exists in the bucket"""
-    supabase = create_supabase_client()
-    try:
-        file_name = os.path.basename(resume_path)  # Extract filename from path
-        # List all files in the 'resumes' bucket
-        files = supabase.storage.from_("resumes").list(path="uploads")
-        file_names_in_bucket = [f['name'] for f in files]
-
-        # Check if the file exists in the bucket
-        return file_name in file_names_in_bucket
-    except Exception as e:
-        st.error(f"Error validating resume path: {e}")
-        return False
-
-def download_resume(resume_path):
-    """Handle resume download with proper path handling"""
-    if not resume_path:
-        return None
-
-    supabase = create_supabase_client()
-    try:
-        file_name = os.path.basename(resume_path)
-        response = supabase.storage.from_("resumes").download(file_name)
-        return response
-    except Exception as e:
-        st.error(f"Error downloading resume: {e}")
-        return None
-
 def application_overview():
     st.title("Application Overview")
 
@@ -107,20 +78,20 @@ def application_overview():
                     st.write(f"**Subject:** {app['job_listings']['job_subject']}")
                 with col4:
                     if app.get('resume_path'):
-                        if validate_resume_path(app['resume_path']):
-                            resume_content = download_resume(app['resume_path'])
-                            if resume_content:
-                                st.download_button(
-                                    label="Download Resume",
-                                    data=resume_content,
-                                    file_name=f"resume_{app['users']['full_name']}.pdf",
-                                    mime="application/pdf",
-                                    key=f"download_{app['id']}"
-                                )
-                            else:
-                                st.write("Resume unavailable")
+                        # Directly use the resume_path to create a download link
+                        resume_path = app['resume_path']  # Adjust this if necessary to your local storage path
+                        if os.path.exists(resume_path):
+                            with open(resume_path, "rb") as f:
+                                resume_content = f.read()
+                            st.download_button(
+                                label="Download Resume",
+                                data=resume_content,
+                                file_name=os.path.basename(resume_path),
+                                mime="application/pdf",
+                                key=f"download_{app['id']}"
+                            )
                         else:
-                            st.error("Resume file not found in storage.")
+                            st.error("Resume file not found.")
                     else:
                         st.write("No resume uploaded")
                 with col5:
