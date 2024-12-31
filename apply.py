@@ -160,7 +160,7 @@ def apply():
         st.header("Step 2: Additional Details")
         
         teaching_style = st.text_area(
-            "Describe your teaching style",
+            "Describe your teaching technique (notes/exercises/gamification and etc)", 
             value=st.session_state.form_data.get('teaching_style', '')
         )
 

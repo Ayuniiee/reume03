@@ -51,9 +51,11 @@ def about_us():
             <div class='feature-card'>
                 <h4>📝 Upload Your Resume</h4>
                 <ul style='list-style-type: none; padding-left: 0;'>
-                    <li>✓ Click on the "Upload Resume" button.</li>
-                    <li>✓ Select your PDF resume file.</li>
-                    <li>✓ Ensure your resume contains clear and updated information.</li>
+                    <li>✓ Click on the "Upload" button at the sidebar.</li>
+                    <li>✓ Fill in the information which is needed.</li>
+                    <li>✓ You can skip optional boxes, but filling them can help you discover more tutors.</li>
+                    <li>✓ You can approve and reject every tutor that applied</li>
+                    <li>✓ Click set active to make sure job always active and inactive if you don't want any application or you just can delete it.</li>
                 </ul>
             </div>
             
@@ -75,15 +77,17 @@ def about_us():
                     <li>✓ View personalized job suggestions based on your skills.</li>
                     <li>✓ Filter jobs by relevance and preferences.</li>
                     <li>✓ Apply directly to positions through the platform.</li>
+                    <li>✓ Fill in all information </li>
+                    <li>✓ Check the status of apply in applied jobs.</li>
                 </ul>
             </div>
             
             <div class='feature-card'>
-                <h4>📈 Improve Your Profile</h4>
+                <h4>📈 Tips for Using EduResume Effectively</h4>
                 <ul style='list-style-type: none; padding-left: 0;'>
-                    <li>✓ Follow the tips to enhance your resume.</li>
-                    <li>✓ Update your skills and certifications regularly.</li>
-                    <li>✓ Leverage additional resources to grow your career.</li>
+                    <li>✓ Regularly check for new job postings and updates.</li>
+                    <li>✓ Engage with the community for tips and shared experiences.</li>
+                    <li>✓ Make use of all available resources, including tutorials and FAQs.</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
