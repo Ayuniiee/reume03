@@ -81,7 +81,7 @@ def job_list():
             try:
                 supabase.from_("job_listings").update({"is_active": new_status}).eq("id", job["id"]).execute()
                 st.success(f"Job status updated to {'Active' if new_status else 'Inactive'}.")
-                st.experimental_rerun()  # This line should be correct
+                st.rerun()  # This line should be correct
             except Exception as e:
                 st.error(f"Error updating job status: {e}")
 
