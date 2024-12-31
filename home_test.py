@@ -19,7 +19,7 @@ def get_base64_image(image_path):
 def home():
     background_image = get_base64_image('./Logo/background2.jpg')
     right_image = get_base64_image('./Logo/elemenhome2.png')
-    top_image = get_base64_image('./Logo/EduResume2.png')  # Add the path for the new image
+    top_image = get_base64_image('./Logo/EduResume2.png')
 
     st.markdown(
         f"""
@@ -31,11 +31,10 @@ def home():
             background-size: cover;
             background-position: center;
             font-family: 'Poppins', sans-serif;
-            height: 100vh;  /* Ensure full height */
-            margin: 0;  /* Remove default margins */
+            height: 100vh;
+            margin: 0;
         }}
         
-        /* Remove padding from main container */
         .block-container {{
             padding: 0 !important;
             max-width: 100%;
@@ -49,7 +48,7 @@ def home():
             color: white;
             min-height: 100vh;
             position: relative;
-            z-index: 1;  /* Ensure content is above overlay */
+            z-index: 1;
         }}
         
         .text-container {{
@@ -86,6 +85,8 @@ def home():
             justify-content: center;
             align-items: center;
             height: 550px;  
+            position: relative;  /* Ensure proper stacking */
+            z-index: 2;  /* Ensure this is above the overlay */
         }}
         
         .image-container img {{
@@ -94,28 +95,25 @@ def home():
             object-fit: contain;
         }}
 
-        /* Add overlay to entire page */
         .content-container::before {{
             content: "";
-            position: fixed;  /* Change to fixed to cover entire viewport */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100vh;  /* Cover full viewport height */
+            height: 100vh;  
             background-color: rgba(0, 0, 0, 0.8);  
-            z-index: 0;  /* Should be below the content and header */
+            z-index: 0;  /* Overlay should be below the content */
         }}
 
         header {{
             display: none !important;
         }}
 
-        /* Remove default streamlit margins */
         .css-1544g2n, .css-k1vhr4 {{
             margin: 0 !important;
             padding: 0 !important;
         }}
-        
         </style>
         """,
         unsafe_allow_html=True,
@@ -127,10 +125,12 @@ def home():
         <div class="content-container">
             <div class="text-container">
                 <div class="top-image-container">
-                    <img src="data:image/png;base64,{top_image}" alt="Top Image" />  <!-- New Top Image -->
+                    <img src="data:image/png;base64,{top_image}" alt="Top Image" />
                 </div>
                 <div class="description">
-                    Selamat datang ke Edu Resume – platform pintar yang direka khas untuk membantu anda membina dan meningkatkan peluang pekerjaan melalui Resume pendidikan anda! Di sini, kami memudahkan anda memilih keraya pilihan anda melalui pengalaman, kemahiran, dan kelayatan anda dalam bidang pendidikan. Hanya dengan beberapa langkah mudah, anda boleh memuat naik butiran akademik dan profesional anda, dan sistem kami akan memberi cadangan keryjaya di dalam menjadi tutor peribadi. Serta kami akan membuka lebih banyak peluang kerjaya pendidikan untuk masa depan yang cerah!
+                    Welcome to EduResume – the ultimate platform that makes finding and offering tutoring jobs a breeze! Whether you're a passionate tutor looking to share your expertise or a parent seeking the perfect tutor for your child, we’ve got you covered.
+                    For tutors, it’s as simple as uploading your resume. No complicated forms or extra details needed! Our system works its magic, matching you with top-notch tutoring opportunities that align with your skills and experience. Say goodbye to job hunting stress and hello to endless possibilities!
+                    For parents, posting a tutoring job has never been easier. Just tell us what you need, and we’ll connect you with the best tutors to help your child succeed. EduResume – where education meets opportunity!
                 </div>
             </div>
             <div class="image-container">
