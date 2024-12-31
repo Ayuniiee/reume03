@@ -96,69 +96,53 @@ class CustomResumeParser:
         """
         Enhanced name extraction with improved pattern matching and filtering
         """
-        # Common Indian/Malay/Chinese name prefixes and titles to exclude
-        prefixes = ['mr', 'mrs', 'ms', 'dr', 'prof', 'sir', 'madam', 'dato', 'datin', 'tan sri', 'puan sri']
-        
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
         # Words that indicate we should skip this line
+        # In the extract_name method, update the skip_words list:
         skip_words = [
             'resume', 'curriculum vitae', 'cv', 'highly', 'experienced', 'professional',
             'qualified', 'dedicated', 'motivated', 'kindergarten', 'teacher', 'tutor',
             'software', 'engineer', 'developer', 'senior', 'junior', 'application',
             'passionate', 'creative', 'innovative', 'address', 'email', 'phone',
-            'contact', 'education', 'experience', 'skills', 'objective'
+            'contact', 'education', 'experience', 'skills', 'objective',
+            'lot', 'kampung', 'jalan', 'road', 'street', 'avenue', 'lane',
+            'kuala', 'terengganu', 'selangor', 'penang', 'melaka', 'johor',
+            'block', 'unit', 'floor', 'apartment'
         ]
         
-        # Split text into lines and clean
-        lines = [line.strip() for line in text.split('\n') if line.strip()]
-        
-        # First try to find name with common name patterns
-        name = None
-        
-        for i, line in enumerate(lines[:10]):  # Check first 10 non-empty lines
-            line_lower = line.lower()
+        for line in lines[:5]:  # Check first 5 lines
+            line = line.strip()
             
-            # Skip lines containing common skip words
-            if any(word in line_lower for word in skip_words):
+            # Skip lines with common words that aren't names
+            if any(word.lower() in line.lower() for word in skip_words):
                 continue
                 
-            # Remove any prefixes from the line for checking
-            clean_line = line
-            for prefix in prefixes:
-                if line_lower.startswith(prefix + ' '):
-                    clean_line = line[len(prefix):].strip()
-                    break
-            
-            words = clean_line.split()
-            
-            # Check if this looks like a name:
-            # - 2-4 words long
-            # - Each word is capitalized
-            # - Each word contains only letters (and certain punctuation)
-            # - Not all words are uppercase (to avoid headers)
-            if (2 <= len(words) <= 4 and
-                all(word[0].isupper() for word in words) and
-                all(word.replace("'", "").replace("-", "").replace(".", "").isalpha() for word in words) and
-                not all(word.isupper() for word in words)):
-                
-                # Additional validation:
-                # - Words should be reasonable length for names (2-15 chars)
-                # - Should not contain common words that aren't names
-                if all(2 <= len(word) <= 15 for word in words):
-                    name = ' '.join(words)
-                    break
-        
-        # If no name found with primary method, try backup pattern
-        if not name:
-            # Look for pattern: lines that are 2-4 capitalized words
-            for line in lines[:15]:  # Check first 15 lines
+            # Special check for names starting with Sharifah/Syed
+            if line.startswith('Sharifah') or line.startswith('Syed'):
                 words = line.split()
-                if (2 <= len(words) <= 4 and
-                    all(word[0].isupper() and word[1:].islower() for word in words) and
-                    all(len(word) >= 2 for word in words)):
-                    name = ' '.join(words)
-                    break
+                if 2 <= len(words) <= 5:  # Name should be 2-5 words
+                    if all(word[0].isupper() for word in words):  # All words should be capitalized
+                        if not any(skip_word.lower() in line.lower() for skip_word in skip_words):
+                            return line.strip()
         
-        return name if name else 'Name not found'
+        # If no Sharifah/Syed name found, try general name patterns
+        malay_name_patterns = [
+            r'^[A-Z][a-z]+\s+(?:bin|binti|bt|b\.)\s+[A-Z][a-z]+',
+            r'^(?:Sharifah|Syed)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*',
+            r'^[A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+(?:bin|binti|bt|b\.)\s+[A-Z][a-z]+)?'
+        ]
+        
+        for line in lines[:5]:
+            line = line.strip()
+            if any(skip_word.lower() in line.lower() for skip_word in skip_words):
+                continue
+                
+            for pattern in malay_name_patterns:
+                match = re.match(pattern, line)
+                if match:
+                    return line.strip()
+        
+        return 'Name not found'
         
     def extract_email(self, text):
         """Extract email from text"""
@@ -182,21 +166,36 @@ class CustomResumeParser:
             'mathematics': [
                 'mathematics', 'algebra', 'calculus', 'geometry', 'trigonometry',
                 'statistics', 'probability', 'arithmetic', 'number theory', 'math',
-                'mathematical', 'numeracy', 'quantitative'
+                'mathematical', 'numeracy', 'quantitative', 'additional mathematics',
+                'modern math'
             ],
             'science': [
                 'science', 'physics', 'chemistry', 'biology', 'environmental science',
                 'earth science', 'laboratory', 'scientific method', 'experiments',
-                'stem', 'scientific'
+                'stem', 'scientific', 'computer science', 'information technology',
+                'science computer', 'applied science'
             ],
             'languages': [
                 'english', 'malay', 'bahasa melayu', 'arabic', 'mandarin', 'chinese',
                 'language arts', 'grammar', 'composition', 'literature', 'quran',
-                'linguistics'
+                'linguistics', 'english language', 'bahasa inggeris', 'tamil',
+                'japanese', 'korean', 'french', 'german', 'spanish'
             ],
-            'art': [
-                'art', 'drawing', 'painting', 'creative arts', 'visual arts',
-                'design', 'crafts', 'artistic', 'creativity'
+            'humanities': [
+                'history', 'geography', 'economics', 'business studies', 'accounting',
+                'commerce', 'economy', 'social studies', 'civics', 'moral education',
+                'islamic studies', 'religious studies'
+            ],
+            'technical': [
+                'computer science', 'information technology', 'programming',
+                'web development', 'database', 'networking', 'cybersecurity',
+                'digital technology', 'multimedia', 'graphic design',
+                'engineering drawing', 'technical drawing'
+            ],
+            'vocational': [
+                'home science', 'living skills', 'home economics', 'gardening',
+                'agriculture', 'engineering technology', 'woodwork', 'metalwork',
+                'electrical technology', 'automotive'
             ]
         }
         
