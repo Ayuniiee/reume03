@@ -326,8 +326,8 @@ def extract_keywords_from_resume(resume_text):
     skill_patterns = [
         r"\b(Teaching|Education|Learning|Instruction)\b",
         r"\b(Special Needs|Special Education|Adapted Learning)\b",
-        r"\b(Python|Java|SQL|Communication|Leadership)\b",
-        r"\b(Classroom Management|Student Assessment)\b"
+        r"\b(Python|Java|SQL|Communication|Leadership|PHP)\b",
+        r"\b(Classroom Management|Student Assessment|Gamification)\b"
     ]
     
     # Extract all matches

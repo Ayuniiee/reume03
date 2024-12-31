@@ -87,7 +87,7 @@ def about_us():
                 <ul style='list-style-type: none; padding-left: 0;'>
                     <li>✓ Regularly check for new job postings and updates.</li>
                     <li>✓ Engage with the community for tips and shared experiences.</li>
-                    <li>✓ Make use of all available resources, including tutorials and FAQs.</li>
+                    <li>✓ Make use of all available resources, including AI chatbot.</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
