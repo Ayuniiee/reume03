@@ -21,6 +21,7 @@ try:
     from about_us import about_us  # type: ignore
     from apply import apply
     from job_list import job_list
+    from chatbot import chatbot
 except ImportError as e:
     st.error(f"Import error: {e}")
     st.stop()
@@ -256,6 +257,9 @@ def main():
                 if st.button("💼 Applied Jobs", key="applied_jobs_button", use_container_width=True):
                     st.session_state["page"] = "applied_jobs"
                     st.rerun()
+                if st.button("💬 Chatbot", key="chat_button", use_container_width=True):
+                    st.session_state["page"] = "chatbot"
+                    st.rerun()
             elif st.session_state.get("user_type", "").lower() == "parent":
                 if st.button("↑  Upload", key="upload_button", use_container_width=True):
                     st.session_state["page"] = "upload"
@@ -317,6 +321,9 @@ def main():
         apply()  # Call the apply function
     elif st.session_state.get("page") == "job_list":
         job_list()
+    elif st.session_state.get("page") == "chatbot":
+        chatbot()
+
       
 if __name__ == "__main__":
     # Initialize session state variables if not already present
