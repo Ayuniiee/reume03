@@ -39,7 +39,7 @@ nlp = setup_spacy()
 class CustomResumeParser:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.nlp = nlp  # Use the properly initialized spaCy model
+        self.nlp = nlp
         
     def extract_text_from_pdf(self):
         """Extract text from PDF file"""
@@ -51,32 +51,114 @@ class CustomResumeParser:
             return None
             
     def get_extracted_data(self):
-        """Extract data from resume"""
+        """Extract all data from resume with enhanced error handling"""
         try:
             text = self.extract_text_from_pdf()
             if not text:
                 return None
-                
-            # Basic extracted data structure
+
+            extracted_skills = self.extract_skills(text)
+            
+            # Group skills by category for better organization
+            categorized_skills = {
+                'teaching': [],
+                'subjects': [],
+                'technical': [],
+                'other': []
+            }
+            
+            # Categorize extracted skills
+            for skill in extracted_skills:
+                if any(word in skill.lower() for word in ['teach', 'classroom', 'education', 'learning']):
+                    categorized_skills['teaching'].append(skill)
+                elif any(word in skill.lower() for word in ['english', 'malay', 'arabic', 'science', 'math']):
+                    categorized_skills['subjects'].append(skill)
+                elif any(word in skill.lower() for word in ['ms', 'computer', 'programming', 'analysis']):
+                    categorized_skills['technical'].append(skill)
+                else:
+                    categorized_skills['other'].append(skill)
+
             data = {
                 'name': self.extract_name(text),
                 'email': self.extract_email(text),
                 'mobile_number': self.extract_mobile_number(text),
-                'skills': self.extract_skills(text),
-                'no_of_pages': 1  # You can enhance this to actually count pages
+                'skills': extracted_skills,
+                'categorized_skills': categorized_skills,
+                'no_of_pages': 1
             }
             return data
-            
+
         except Exception as e:
             st.error(f"Error parsing resume: {str(e)}")
             return None
             
     def extract_name(self, text):
-        """Extract name from text"""
-        # Add your name extraction logic here
-        # This is a simple example - you should enhance this
-        first_line = text.split('\n')[0]
-        return first_line.strip()
+        """
+        Enhanced name extraction with improved pattern matching and filtering
+        """
+        # Common Indian/Malay/Chinese name prefixes and titles to exclude
+        prefixes = ['mr', 'mrs', 'ms', 'dr', 'prof', 'sir', 'madam', 'dato', 'datin', 'tan sri', 'puan sri']
+        
+        # Words that indicate we should skip this line
+        skip_words = [
+            'resume', 'curriculum vitae', 'cv', 'highly', 'experienced', 'professional',
+            'qualified', 'dedicated', 'motivated', 'kindergarten', 'teacher', 'tutor',
+            'software', 'engineer', 'developer', 'senior', 'junior', 'application',
+            'passionate', 'creative', 'innovative', 'address', 'email', 'phone',
+            'contact', 'education', 'experience', 'skills', 'objective'
+        ]
+        
+        # Split text into lines and clean
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        
+        # First try to find name with common name patterns
+        name = None
+        
+        for i, line in enumerate(lines[:10]):  # Check first 10 non-empty lines
+            line_lower = line.lower()
+            
+            # Skip lines containing common skip words
+            if any(word in line_lower for word in skip_words):
+                continue
+                
+            # Remove any prefixes from the line for checking
+            clean_line = line
+            for prefix in prefixes:
+                if line_lower.startswith(prefix + ' '):
+                    clean_line = line[len(prefix):].strip()
+                    break
+            
+            words = clean_line.split()
+            
+            # Check if this looks like a name:
+            # - 2-4 words long
+            # - Each word is capitalized
+            # - Each word contains only letters (and certain punctuation)
+            # - Not all words are uppercase (to avoid headers)
+            if (2 <= len(words) <= 4 and
+                all(word[0].isupper() for word in words) and
+                all(word.replace("'", "").replace("-", "").replace(".", "").isalpha() for word in words) and
+                not all(word.isupper() for word in words)):
+                
+                # Additional validation:
+                # - Words should be reasonable length for names (2-15 chars)
+                # - Should not contain common words that aren't names
+                if all(2 <= len(word) <= 15 for word in words):
+                    name = ' '.join(words)
+                    break
+        
+        # If no name found with primary method, try backup pattern
+        if not name:
+            # Look for pattern: lines that are 2-4 capitalized words
+            for line in lines[:15]:  # Check first 15 lines
+                words = line.split()
+                if (2 <= len(words) <= 4 and
+                    all(word[0].isupper() and word[1:].islower() for word in words) and
+                    all(len(word) >= 2 for word in words)):
+                    name = ' '.join(words)
+                    break
+        
+        return name if name else 'Name not found'
         
     def extract_email(self, text):
         """Extract email from text"""
@@ -90,17 +172,79 @@ class CustomResumeParser:
         numbers = re.findall(phone_pattern, text)
         return numbers[0] if numbers else 'Not found'
         
+
     def extract_skills(self, text):
-        """Extract skills from text"""
-        # Add your skills extraction logic here
-        # This is a simple example - you should enhance this
-        skills = []
-        # Add common skills you want to detect
-        common_skills = ['python', 'java', 'c++', 'javascript', 'html', 'css']
-        for skill in common_skills:
-            if skill.lower() in text.lower():
-                skills.append(skill)
-        return skills
+        """
+        Enhanced skill extraction with better subject area matching
+        """
+        # Define comprehensive skill and subject keywords
+        subject_areas = {
+            'mathematics': [
+                'mathematics', 'algebra', 'calculus', 'geometry', 'trigonometry',
+                'statistics', 'probability', 'arithmetic', 'number theory', 'math',
+                'mathematical', 'numeracy', 'quantitative'
+            ],
+            'science': [
+                'science', 'physics', 'chemistry', 'biology', 'environmental science',
+                'earth science', 'laboratory', 'scientific method', 'experiments',
+                'stem', 'scientific'
+            ],
+            'languages': [
+                'english', 'malay', 'bahasa melayu', 'arabic', 'mandarin', 'chinese',
+                'language arts', 'grammar', 'composition', 'literature', 'quran',
+                'linguistics'
+            ],
+            'art': [
+                'art', 'drawing', 'painting', 'creative arts', 'visual arts',
+                'design', 'crafts', 'artistic', 'creativity'
+            ]
+        }
+        
+        # Teaching and education skills
+        teaching_skills = {
+            'pedagogy': [
+                'teaching', 'instruction', 'pedagogy', 'lesson planning',
+                'curriculum development', 'assessment', 'evaluation'
+            ],
+            'classroom': [
+                'classroom management', 'student engagement', 'behavior management',
+                'differentiated instruction', 'inclusive education'
+            ],
+            'special_education': [
+                'special needs', 'special education', 'learning disabilities',
+                'individualized education program', 'adaptive learning'
+            ]
+        }
+        
+        found_skills = {
+            'subjects': set(),
+            'teaching': set(),
+            'special_ed': set()
+        }
+        
+        text_lower = text.lower()
+        
+        # Extract subject area skills
+        for area, keywords in subject_areas.items():
+            for keyword in keywords:
+                if keyword in text_lower:
+                    found_skills['subjects'].add(f"{area}: {keyword}")
+        
+        # Extract teaching skills
+        for category, keywords in teaching_skills.items():
+            for keyword in keywords:
+                if keyword in text_lower:
+                    if category == 'special_education':
+                        found_skills['special_ed'].add(keyword)
+                    else:
+                        found_skills['teaching'].add(keyword)
+        
+        # Combine all skills
+        all_skills = list(found_skills['subjects']) + \
+                    list(found_skills['teaching']) + \
+                    list(found_skills['special_ed'])
+        
+        return all_skills
     
 def process_resume(file_path):
     """Process resume with enhanced error handling"""
@@ -145,7 +289,7 @@ def check():
         st.warning("Please log in first.")
         return None
     
-    if st.session_state.get("user_type", "").lower() != "user":
+    if st.session_state.get("user_type", "").lower() != "tutor":
         st.error("Access denied. This page is for users only.")
         return None
     
@@ -169,12 +313,35 @@ def display_user_dashboard(user):
     st.write(f"Email: {user['email']}")
 
 def extract_keywords_from_resume(resume_text):
-    keywords = []
-    patterns = [r"\b(Developer|Engineer|Manager|Tutor|Designer|Analyst)\b", 
-                r"\b(Python|Java|SQL|Teaching|Communication|Leadership|Information Technology)\b"]
-    for pattern in patterns:
-        keywords.extend(re.findall(pattern, resume_text, re.IGNORECASE))
-    return set(keywords)
+    keywords = set()  # Use a set to avoid duplicates
+    
+    # Basic role patterns
+    role_patterns = [
+        r"\b(Teacher|Tutor|Instructor|Educator)\b",
+        r"\b(Special Needs|Special Education|Special Children)\b",
+        r"\b(Developer|Engineer|Manager|Designer|Analyst)\b"
+    ]
+    
+    # Skill patterns
+    skill_patterns = [
+        r"\b(Teaching|Education|Learning|Instruction)\b",
+        r"\b(Special Needs|Special Education|Adapted Learning)\b",
+        r"\b(Python|Java|SQL|Communication|Leadership)\b",
+        r"\b(Classroom Management|Student Assessment)\b"
+    ]
+    
+    # Extract all matches
+    for pattern in role_patterns + skill_patterns:
+        matches = re.findall(pattern, resume_text, re.IGNORECASE)
+        keywords.update([match.lower() for match in matches if match])
+    
+    # Add explicit check for special education related terms
+    special_ed_terms = ['special needs', 'special education', 'special children']
+    for term in special_ed_terms:
+        if term in resume_text.lower():
+            keywords.add(term)
+    
+    return keywords
 
 def show_pdf(file_path):
     with open(file_path, "rb") as f:
@@ -184,27 +351,51 @@ def show_pdf(file_path):
         st.markdown(href, unsafe_allow_html=True)
 
 def recommend_jobs_from_database(keywords):
-    recommended_jobs = []
     try:
         response = supabase.table('job_listings').select('*').execute()
         all_jobs = response.data
-
-        # Normalize keywords for comparison (all lowercase)
-        normalized_keywords = {keyword.strip().lower() for keyword in keywords}  # Use set for fast membership testing
-
+        
+        recommended_jobs = []
+        keywords = [k.lower().strip() for k in keywords]  # Normalize keywords
+        
+        # Add common variations of special education keywords
+        special_ed_keywords = ['special needs', 'special education', 'special children']
+        if any(keyword in special_ed_keywords for keyword in keywords):
+            keywords.extend(special_ed_keywords)
+        
         for job in all_jobs:
-            # Normalize job_subject and required_skills (all lowercase)
-            job_subject_normalized = {s.strip().lower() for s in job['job_subject'].split(',')}
-            job_skills = {s.strip().lower() for s in job['required_skills'].split(',')}  # Use set
-
-            # Check if any keyword matches job_subject or required_skills
-            if (job_subject_normalized & normalized_keywords) or (job_skills & normalized_keywords):
+            matches = False
+            
+            # Check job description
+            if 'job_description' in job:
+                desc_lower = job['job_description'].lower()
+                if any(keyword in desc_lower for keyword in keywords):
+                    matches = True
+            
+            # Check job subject
+            if 'job_subject' in job:
+                subject_lower = job['job_subject'].lower()
+                if any(keyword in subject_lower for keyword in keywords):
+                    matches = True
+            
+            # Check required skills
+            if 'required_skills' in job and job['required_skills']:
+                skills_lower = job['required_skills'].lower()
+                if any(keyword in skills_lower for keyword in keywords):
+                    matches = True
+                
+                # Special check for special education keywords
+                if any(term in skills_lower for term in special_ed_keywords):
+                    if any(term in keywords for term in special_ed_keywords):
+                        matches = True
+            
+            if matches:
                 recommended_jobs.append(job)
-
+                
+        return recommended_jobs
     except Exception as e:
         st.error(f"Error querying database: {e}")
-
-    return recommended_jobs
+        return []
 
 def get_table_download_link(df, filename, text):
     """Generates a link allowing the data in a given pandas dataframe to be downloaded."""

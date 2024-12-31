@@ -290,7 +290,7 @@ def main():
             if st.button("✉  Feedback", key="feedback_button_not_logged_in", use_container_width=True):
                 st.session_state["page"] = "feedback"
                 st.rerun()
-            if st.button("ⓘ  About Us", key="about_us_button", use_container_width=True):
+            if st.button("ⓘ  Guideline", key="about_us_button", use_container_width=True):
                 st.session_state["page"] = "about_us"
                 st.rerun()
     # Page routing

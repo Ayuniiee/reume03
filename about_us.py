@@ -24,62 +24,45 @@ def about_us():
             color: #0066cc;
             font-weight: bold;
         }
-        .team-section {
-            text-align: center;
-            margin-top: 2rem;
-        }
         </style>
     """, unsafe_allow_html=True)
 
     # Header Section
-    st.markdown("<h1 style='text-align: center; color: #0066cc;'>About EduResume</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #0066cc;'>Guidelines EduResume</h1>", unsafe_allow_html=True)
     
     # Main Description
     st.markdown("""
         <div class='about-section'>
             <h2>Welcome to EduResume 👋</h2>
             <p style='font-size: 1.1rem; line-height: 1.6;'>
-                EduResume is your dedicated platform for educational and professional growth. We bridge the gap between 
-                academic excellence and career opportunities, helping students and professionals showcase their potential 
-                and find their dream positions in the educational sector.
+                EduResume is your dedicated platform for educational and professional growth. We help educators and professionals 
+                connect with the right opportunities while simplifying the application process. Let's make your career journey smoother and more rewarding!
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Mission Statement
-    st.markdown("""
-        <div class='about-section'>
-            <h3>Our Mission 🎯</h3>
-            <p style='font-size: 1.1rem; line-height: 1.6;'>
-                To empower educators and educational professionals by providing a streamlined platform for job searching,
-                application management, and career development. We believe in making the job search process more efficient,
-                transparent, and successful for everyone in the education sector.
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Key Features Section
-    st.markdown("<h3 style='margin-top: 2rem;'>What We Offer 🌟</h3>", unsafe_allow_html=True)
+    # Guidelines Section
+    st.markdown("<h3 style='margin-top: 2rem;'>How to Use EduResume 🛠️</h3>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("""
             <div class='feature-card'>
-                <h4>💼 Job Management</h4>
+                <h4>📝 Upload Your Resume</h4>
                 <ul style='list-style-type: none; padding-left: 0;'>
-                    <li>✓ Easy job search and filtering</li>
-                    <li>✓ Application tracking system</li>
-                    <li>✓ Status updates and notifications</li>
+                    <li>✓ Click on the "Upload Resume" button.</li>
+                    <li>✓ Select your PDF resume file.</li>
+                    <li>✓ Ensure your resume contains clear and updated information.</li>
                 </ul>
             </div>
             
             <div class='feature-card'>
-                <h4>📝 Profile Building</h4>
+                <h4>🔍 Analyze Your Resume</h4>
                 <ul style='list-style-type: none; padding-left: 0;'>
-                    <li>✓ Professional profile creation</li>
-                    <li>✓ Resume/CV management</li>
-                    <li>✓ Skills showcase</li>
+                    <li>✓ View the detailed analysis of your resume.</li>
+                    <li>✓ Check the skills and experience detected.</li>
+                    <li>✓ Get a score and improvement suggestions.</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
@@ -87,20 +70,20 @@ def about_us():
     with col2:
         st.markdown("""
             <div class='feature-card'>
-                <h4>🤝 Networking</h4>
+                <h4>💼 Explore Job Recommendations</h4>
                 <ul style='list-style-type: none; padding-left: 0;'>
-                    <li>✓ Connect with institutions</li>
-                    <li>✓ Professional community</li>
-                    <li>✓ Industry updates</li>
+                    <li>✓ View personalized job suggestions based on your skills.</li>
+                    <li>✓ Filter jobs by relevance and preferences.</li>
+                    <li>✓ Apply directly to positions through the platform.</li>
                 </ul>
             </div>
             
             <div class='feature-card'>
-                <h4>📈 Career Growth</h4>
+                <h4>📈 Improve Your Profile</h4>
                 <ul style='list-style-type: none; padding-left: 0;'>
-                    <li>✓ Professional development resources</li>
-                    <li>✓ Career advice and tips</li>
-                    <li>✓ Industry insights</li>
+                    <li>✓ Follow the tips to enhance your resume.</li>
+                    <li>✓ Update your skills and certifications regularly.</li>
+                    <li>✓ Leverage additional resources to grow your career.</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
@@ -111,9 +94,9 @@ def about_us():
             <h3>Get in Touch 📬</h3>
             <p>Have questions or suggestions? We'd love to hear from you!</p>
             <p>
-                📧 Email: contact@eduresume.com<br>
-                📞 Phone: (123) 456-7890<br>
-                📍 Location: Education District, Knowledge City
+                📧 Email: ayuniekhadijah@gmail.com<br>
+                📞 Phone: 018-3802144<br>
+                📍 Location: Universiti Pendidikan Sultan Idris
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -123,7 +106,7 @@ def about_us():
         <div style='text-align: center; margin-top: 3rem; padding: 1rem; background-color: #f8f9fa; border-radius: 8px;'>
             <p>© 2024 EduResume. All rights reserved.</p>
             <p style='font-size: 0.9rem; color: #666;'>
-                Making educational careers better, one application at a time.
+                Empowering educators and professionals, one resume at a time.
             </p>
         </div>
     """, unsafe_allow_html=True)
