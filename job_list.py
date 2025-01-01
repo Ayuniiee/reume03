@@ -11,7 +11,11 @@ def create_supabase_client():
         st.stop()
 
 def job_list():
-    st.title("📋 Manage Job Listings")
+    # Page Title with Background Color
+    st.markdown(
+        "<h1 style='text-align: center; color: white; background-color: #4b79a1; padding: 10px; border-radius: 10px;'>📋 Manage Job Listings</h1>",
+        unsafe_allow_html=True
+    )
 
     # Check login status and user type
     if not st.session_state.get("logged_in"):
@@ -45,26 +49,31 @@ def job_list():
         st.info("No job listings found. Use the Upload Job Listing page to add jobs.")
         return
 
-    st.subheader("Your Job Listings")
-
+    # Iterate over job listings
     for job in jobs:
-        st.markdown(f"### {job['job_title']}")
-        st.markdown(f"**Description:** {job['job_description']}")
+        # Card-like container for each job listing
+        st.markdown(
+            f"""
+            <div style="background-color: #f7f9fc; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);">
+                <h3 style="color: #4b79a1; margin-bottom: 5px;">{job['job_title']}</h3>
+                <p style="margin: 5px 0;"><strong>Description:</strong> {job['job_description']}</p>
+                <p style="margin: 5px 0;"><strong>Preferred Start Date:</strong> {job['preferred_start_date']}</p>
+                <p style="margin: 5px 0;"><strong>Job Frequency:</strong> {job['job_frequency']}</p>
+                <p style="margin: 5px 0;"><strong>Hourly Rate:</strong> ${job['hourly_rate']}</p>
+                <p style="margin: 5px 0; color: {'green' if job['is_active'] else 'red'}; font-weight: bold;">
+                    <strong>Status:</strong> {'Active' if job['is_active'] else 'Inactive'}
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        if 'is_active' in job:
-            status_color = "green" if job['is_active'] else "red"
-            st.markdown(
-                f"**Status:** <span style='color:{status_color}; font-weight:bold;'>{'Active' if job['is_active'] else 'Inactive'}</span>",
-                unsafe_allow_html=True
-            )
-        else:
-            st.warning("Status information is not available.")
-
+        # Buttons in Columns
         col1, col2 = st.columns(2)
         with col1:
             toggle_label = "Set Active" if not job.get('is_active', False) else "Set Inactive"
             toggle_status = st.button(
-                label=f"{toggle_label}",
+                label=toggle_label,
                 key=f"toggle_{job['id']}",
                 help=f"Click to {'activate' if not job.get('is_active', False) else 'deactivate'} this job."
             )
@@ -81,7 +90,7 @@ def job_list():
             try:
                 supabase.from_("job_listings").update({"is_active": new_status}).eq("id", job["id"]).execute()
                 st.success(f"Job status updated to {'Active' if new_status else 'Inactive'}.")
-                st.rerun()  # This line should be correct
+                st.rerun()
             except Exception as e:
                 st.error(f"Error updating job status: {e}")
 
@@ -90,7 +99,7 @@ def job_list():
             try:
                 supabase.from_("job_listings").delete().eq("id", job["id"]).execute()
                 st.success("Job deleted successfully.")
-                st.rerun()  # This line should be correct
+                st.rerun()
             except Exception as e:
                 st.error(f"Error deleting job: {e}")
 
