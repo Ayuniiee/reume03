@@ -103,4 +103,3 @@ def extract_skills(text, nlp):
         if token.text in skill_keywords:
             skills.append(token.text)
     return list(set(skills))
- 
