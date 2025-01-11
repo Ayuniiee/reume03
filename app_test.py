@@ -16,6 +16,7 @@ try:
     from pages.sign_test import signup  # type: ignore 
     from upload import upload  # type: ignore
     from feedback import feedback  # type: ignore
+    from admin_panel import admin_panel
     from application_overview import application_overview  # type: ignore
     from applied_jobs import main as applied_jobs
     from about_us import about_us  # type: ignore
@@ -270,6 +271,10 @@ def main():
                 if st.button("📃 List of Job", key="job_list_button", use_container_width=True):
                     st.session_state["page"] = "job_list"
                     st.rerun()
+            elif st.session_state.get("user_type", "").lower() == "admin":
+                if st.button("↑  Panel", key="panel_button", use_container_width=True):
+                    st.session_state["page"] = "admin_panel"  # Changed from "admin" to "admin_panel"
+                    st.rerun()  
             
             st.markdown("<div class='sidebar-divider'></div>", unsafe_allow_html=True)
             
@@ -323,6 +328,8 @@ def main():
         job_list()
     elif st.session_state.get("page") == "chatbot":
         chatbot()
+    elif st.session_state.get("page") == "admin_panel":
+        admin_panel()
 
       
 if __name__ == "__main__":
