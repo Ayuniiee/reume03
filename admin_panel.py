@@ -1,12 +1,25 @@
 import streamlit as st
 from supabase import create_client
-import pandas as pd
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM, Embedding, Dropout
+from sklearn.metrics.pairwise import cosine_similarity
+import tensorflow as tf
 import joblib
 import json
 import os
@@ -23,68 +36,239 @@ def create_supabase_client():
         st.error(f"Failed to initialize Supabase client: {e}")
         st.stop()
 
+class EnhancedMLRecommender:
+    def __init__(self):
+        self.model_path = 'ml_models'
+        self.tfidf_vectorizer = None
+        self.neural_network = None
+        self.random_forest = None
+        self.label_encoder = LabelEncoder()
+        self.tokenizer = None
+        self.max_words = 10000
+        self.max_len = 200
+        os.makedirs(self.model_path, exist_ok=True)
+
+    def preprocess_data(self, df):
+        """Preprocess the data for ML models"""
+        # Combine text fields
+        df['combined_text'] = df['job_description'].fillna('')
+        if 'required_skills' in df.columns:
+            df['combined_text'] += ' ' + df['required_skills'].fillna('')
+        if 'job_subject' in df.columns:
+            df['combined_text'] += ' ' + df['job_subject'].fillna('')
+        
+        # Encode job categories
+        df['job_category_encoded'] = self.label_encoder.fit_transform(df['job_subject'])
+        
+        return df
+
+    def build_deep_learning_model(self, vocab_size, embedding_dim=100):
+        """Build LSTM model for text classification"""
+        model = Sequential([
+            Embedding(vocab_size, embedding_dim, input_length=self.max_len),
+            LSTM(64, return_sequences=True),
+            LSTM(32),
+            Dense(64, activation='relu'),
+            Dropout(0.5),
+            Dense(32, activation='relu'),
+            Dense(len(self.label_encoder.classes_), activation='softmax')
+        ])
+        
+        model.compile(
+            optimizer='adam',
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        return model
+
+    def train_models(self, job_data):
+        """Train multiple ML models for job recommendation"""
+        try:
+            # Preprocess data
+            processed_df = self.preprocess_data(job_data)
+            
+            # Split data
+            X_train, X_test, y_train, y_test = train_test_split(
+                processed_df['combined_text'],
+                processed_df['job_category_encoded'],
+                test_size=0.2,
+                random_state=42
+            )
+
+            # 1. TF-IDF Vectorization
+            self.tfidf_vectorizer = TfidfVectorizer(
+                max_features=5000,
+                stop_words='english',
+                ngram_range=(1, 2)
+            )
+            X_train_tfidf = self.tfidf_vectorizer.fit_transform(X_train)
+            X_test_tfidf = self.tfidf_vectorizer.transform(X_test)
+
+            # 2. Random Forest Classifier
+            self.random_forest = RandomForestClassifier(
+                n_estimators=100,
+                max_depth=20,
+                random_state=42
+            )
+            self.random_forest.fit(X_train_tfidf, y_train)
+            rf_accuracy = self.random_forest.score(X_test_tfidf, y_test)
+
+            # 3. Neural Network Classifier
+            self.neural_network = MLPClassifier(
+                hidden_layer_sizes=(100, 50),
+                max_iter=500,
+                random_state=42
+            )
+            self.neural_network.fit(X_train_tfidf, y_train)
+            nn_accuracy = self.neural_network.score(X_test_tfidf, y_test)
+
+            # 4. Deep Learning Model
+            # Prepare text data for LSTM
+            self.tokenizer = Tokenizer(num_words=self.max_words)
+            self.tokenizer.fit_on_texts(X_train)
+            
+            X_train_seq = self.tokenizer.texts_to_sequences(X_train)
+            X_test_seq = self.tokenizer.texts_to_sequences(X_test)
+            
+            X_train_pad = pad_sequences(X_train_seq, maxlen=self.max_len)
+            X_test_pad = pad_sequences(X_test_seq, maxlen=self.max_len)
+
+            # Build and train LSTM model
+            lstm_model = self.build_deep_learning_model(len(self.tokenizer.word_index) + 1)
+            lstm_model.fit(
+                X_train_pad,
+                y_train,
+                epochs=10,
+                batch_size=32,
+                validation_split=0.2
+            )
+
+            # Save models
+            joblib.dump(self.tfidf_vectorizer, os.path.join(self.model_path, 'tfidf_vectorizer.joblib'))
+            joblib.dump(self.random_forest, os.path.join(self.model_path, 'random_forest.joblib'))
+            joblib.dump(self.neural_network, os.path.join(self.model_path, 'neural_network.joblib'))
+            joblib.dump(self.label_encoder, os.path.join(self.model_path, 'label_encoder.joblib'))
+            lstm_model.save(os.path.join(self.model_path, 'lstm_model'))
+            
+            # Save tokenizer
+            tokenizer_json = self.tokenizer.to_json()
+            with open(os.path.join(self.model_path, 'tokenizer.json'), 'w') as f:
+                f.write(tokenizer_json)
+
+            return {
+                'random_forest_accuracy': rf_accuracy,
+                'neural_network_accuracy': nn_accuracy,
+                'models_saved': True
+            }
+
+        except Exception as e:
+            raise Exception(f"Error in training models: {str(e)}")
+
+    def get_recommendations(self, query_text, job_data, num_recommendations=5):
+        """Get job recommendations using multiple models"""
+        try:
+            # Load models if not already loaded
+            if not all([self.tfidf_vectorizer, self.random_forest, self.neural_network]):
+                self.load_models()
+
+            # Transform query text
+            query_tfidf = self.tfidf_vectorizer.transform([query_text])
+            
+            # Get predictions from different models
+            rf_pred_proba = self.random_forest.predict_proba(query_tfidf)
+            nn_pred_proba = self.neural_network.predict_proba(query_tfidf)
+            
+            # Prepare text for LSTM
+            query_seq = self.tokenizer.texts_to_sequences([query_text])
+            query_pad = pad_sequences(query_seq, maxlen=self.max_len)
+            lstm_model = tf.keras.models.load_model(os.path.join(self.model_path, 'lstm_model'))
+            lstm_pred_proba = lstm_model.predict(query_pad)
+
+            # Ensemble predictions (average probabilities)
+            ensemble_proba = (rf_pred_proba + nn_pred_proba + lstm_pred_proba) / 3
+            
+            # Get similarity scores
+            job_vectors = self.tfidf_vectorizer.transform(job_data['combined_text'])
+            similarity_scores = cosine_similarity(query_tfidf, job_vectors)[0]
+
+            # Combine ML predictions with similarity scores
+            final_scores = 0.7 * similarity_scores + 0.3 * ensemble_proba.max(axis=1)
+            
+            # Get top recommendations
+            top_indices = final_scores.argsort()[-num_recommendations:][::-1]
+            
+            recommendations = []
+            for idx in top_indices:
+                job = job_data.iloc[idx]
+                recommendations.append({
+                    'job_title': job['job_title'],
+                    'job_description': job['job_description'],
+                    'similarity_score': final_scores[idx],
+                    'predicted_category': self.label_encoder.inverse_transform([ensemble_proba[idx].argmax()])[0]
+                })
+
+            return recommendations
+
+        except Exception as e:
+            raise Exception(f"Error in getting recommendations: {str(e)}")
+
+    def load_models(self):
+        """Load saved models"""
+        try:
+            self.tfidf_vectorizer = joblib.load(os.path.join(self.model_path, 'tfidf_vectorizer.joblib'))
+            self.random_forest = joblib.load(os.path.join(self.model_path, 'random_forest.joblib'))
+            self.neural_network = joblib.load(os.path.join(self.model_path, 'neural_network.joblib'))
+            self.label_encoder = joblib.load(os.path.join(self.model_path, 'label_encoder.joblib'))
+            
+            # Load tokenizer
+            with open(os.path.join(self.model_path, 'tokenizer.json'), 'r') as f:
+                tokenizer_json = f.read()
+                self.tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(tokenizer_json)
+                
+        except Exception as e:
+            raise Exception(f"Error loading models: {str(e)}")
+
 class MLTrainer:
     def __init__(self):
         self.supabase = create_supabase_client()
-        self.model_path = 'ml_models'
-        os.makedirs(self.model_path, exist_ok=True)
+        self.recommender = EnhancedMLRecommender()
 
-    def save_training_history(self, model_name, accuracy, parameters):
+    def save_training_history(self, accuracies, parameters):
         """Save training details to Supabase"""
         try:
             data = {
-                'model_name': model_name,
-                'accuracy': accuracy,
+                'model_name': 'enhanced_job_recommender',
+                'accuracies': json.dumps(accuracies),
                 'parameters': json.dumps(parameters)
             }
             self.supabase.table('ml_training_history').insert(data).execute()
             return True
         except Exception as e:
-            st.error(f"Error saving training history: {e}")
-            return False
+            raise Exception(f"Error saving training history: {e}")
 
     def train_job_recommender(self, job_data):
-        """Train and save the job recommender model"""
+        """Train the enhanced job recommender"""
         try:
-            # Prepare data
-            if 'description' not in job_data.columns:
-                st.error("Required column 'description' not found in training data")
-                return None, 0
-            
-            descriptions = job_data['description'].fillna('')
-            
-            # Split data for validation
-            train_desc, test_desc = train_test_split(
-                descriptions, 
-                test_size=0.2, 
-                random_state=42
-            )
-            
-            # Train vectorizer
-            vectorizer = TfidfVectorizer(stop_words='english')
-            train_vectors = vectorizer.fit_transform(train_desc)
-            
-            # Save model
-            model_file = os.path.join(self.model_path, 'job_recommender.joblib')
-            joblib.dump(vectorizer, model_file)
-            
-            # Calculate basic accuracy
-            test_vectors = vectorizer.transform(test_desc)
-            accuracy = len(vectorizer.vocabulary_) / (len(vectorizer.vocabulary_) + 100)
+            # Train models
+            training_results = self.recommender.train_models(job_data)
             
             # Save training history
             parameters = {
-                'vocabulary_size': len(vectorizer.vocabulary_),
-                'training_samples': len(train_desc),
-                'test_samples': len(test_desc)
+                'max_features': 5000,
+                'n_estimators': 100,
+                'max_depth': 20,
+                'neural_network_layers': [100, 50],
+                'lstm_units': [64, 32],
+                'max_words': self.recommender.max_words,
+                'max_len': self.recommender.max_len
             }
-            self.save_training_history('job_recommender', accuracy, parameters)
             
-            return vectorizer, accuracy
+            self.save_training_history(training_results, parameters)
+            
+            return self.recommender, training_results
             
         except Exception as e:
-            st.error(f"Error in training: {e}")
-            return None, 0
+            raise Exception(f"Error in training: {e}")
 
 def load_job_data():
     """Load and prepare job data from Supabase"""
@@ -132,7 +316,7 @@ def load_job_data():
         return None
 
 def setup_training_page():
-    st.title("AI Model Training Interface")
+    st.title("Enhanced AI Model Training Interface")
     
     # Initialize trainer
     trainer = MLTrainer()
@@ -148,29 +332,27 @@ def setup_training_page():
     # Sample data preview
     preview_df = df[['job_title', 'job_description']].head()
     st.write("Sample data:", preview_df)
-    
-    # Display column information
-    st.subheader("Column Information")
-    for col in ['job_title', 'job_description', 'required_skills', 'job_subject']:
-        if col in df.columns:
-            non_null_count = df[col].count()
-            st.write(f"- {col}: {non_null_count} non-null values")
 
     # 2. Training Configuration
     st.header("2. Training Configuration")
     with st.form("training_config"):
         st.write("Configure training parameters:")
         
-        test_size = st.slider("Test Data Size (%)", 10, 40, 20)
+        # Model selection
+        st.subheader("Select Models to Train")
+        use_rf = st.checkbox("Random Forest Classifier", value=True)
+        use_nn = st.checkbox("Neural Network", value=True)
+        use_lstm = st.checkbox("Deep Learning (LSTM)", value=True)
         
         # Feature selection
         st.subheader("Select Features for Training")
         use_skills = st.checkbox("Include Required Skills", value=True)
         use_subject = st.checkbox("Include Job Subject", value=True)
-        use_education = st.checkbox("Include Educational Background", value=True)
         
-        if len(df) < 100:
-            st.warning(f"Warning: You have {len(df)} samples. Recommended minimum is 100 for better results.")
+        # Advanced parameters
+        st.subheader("Advanced Parameters")
+        max_features = st.slider("Max Features for TF-IDF", 1000, 10000, 5000)
+        epochs = st.slider("Training Epochs", 5, 50, 10)
         
         train_button = st.form_submit_button("Start Training")
         
@@ -179,91 +361,64 @@ def setup_training_page():
                 st.error("Not enough data for training. Minimum 10 samples required.")
                 return
                 
-            with st.spinner("Training model..."):
-                # Prepare training data
-                training_text = df['job_description'].fillna('')
-                if use_skills and 'required_skills' in df.columns:
-                    training_text += ' ' + df['required_skills'].fillna('')
-                if use_subject and 'job_subject' in df.columns:
-                    training_text += ' ' + df['job_subject'].fillna('')
-                if use_education and 'educational_background' in df.columns:
-                    training_text += ' ' + df['educational_background'].fillna('')
-                
-                training_text = training_text.astype(str)
-                
-                training_df = pd.DataFrame({
-                    'title': df['job_title'],
-                    'description': training_text
-                })
-                
-                vectorizer, accuracy = trainer.train_job_recommender(training_df)
-                
-                if vectorizer:
-                    st.success(f"""
-                        Training Complete!
-                        - Accuracy: {accuracy:.2f}
-                        - Vocabulary Size: {len(vectorizer.vocabulary_)}
-                        - Model saved to: {trainer.model_path}
-                    """)
-    
-    # 3. View Training History
-    st.header("3. Training History")
-    try:
-        # Use trainer's Supabase client instead of undefined supabase
-        history = trainer.supabase.table('ml_training_history').select("*").execute()
-        if history.data:
-            history_df = pd.DataFrame(history.data)
-            st.write(history_df)
-            
-            # Plot training history
-            if len(history_df) > 0:
-                fig = px.line(history_df, 
-                            x='trained_date', 
-                            y='accuracy',
-                            title='Model Accuracy Over Time')
-                st.plotly_chart(fig)
-    except Exception as e:
-        st.error(f"Error loading training history: {e}")
+            with st.spinner("Training models... This may take a few minutes."):
+                try:
+                    # Prepare training data
+                    training_text = df['job_description'].fillna('')
+                    if use_skills and 'required_skills' in df.columns:
+                        training_text += ' ' + df['required_skills'].fillna('')
+                    if use_subject and 'job_subject' in df.columns:
+                        training_text += ' ' + df['job_subject'].fillna('')
+                    
+                    training_df = pd.DataFrame({
+                        'job_title': df['job_title'],
+                        'job_description': training_text,
+                        'job_subject': df['job_subject']
+                    })
+                    
+                    # Train models
+                    recommender, results = trainer.train_job_recommender(training_df)
+                    
+                    # Display results
+                    st.success("Training Complete!")
+                    st.write("Model Accuracies:")
+                    st.json(results)
+                    
+                    # Save model details to session state for testing
+                    st.session_state['trained_recommender'] = recommender
+                    
+                except Exception as e:
+                    st.error(f"Error during training: {str(e)}")
 
-    # 4. Test Model
-    st.header("4. Test Trained Model")
-    if os.path.exists(os.path.join(trainer.model_path, 'job_recommender.joblib')):
+    # 3. Test Model
+    st.header("3. Test Trained Model")
+    if 'trained_recommender' in st.session_state:
         test_text = st.text_area(
             "Enter a job description to test:",
             "Mathematics tutor with experience in calculus and algebra"
         )
         
-        if st.button("Test Model"):
+        if st.button("Get Recommendations"):
             try:
-                # Load model
-                vectorizer = joblib.load(
-                    os.path.join(trainer.model_path, 'job_recommender.joblib')
+                recommendations = st.session_state['trained_recommender'].get_recommendations(
+                    test_text,
+                    df,
+                    num_recommendations=5
                 )
                 
-                # Transform test text
-                test_vector = vectorizer.transform([test_text])
-                
-                # Get similar jobs using the combined text field
-                job_vectors = vectorizer.transform(df['combined_text'].fillna(''))
-                similarities = (test_vector @ job_vectors.T).toarray()[0]
-                
-                # Show top 5 similar jobs
-                top_indices = similarities.argsort()[-5:][::-1]
-                
-                st.subheader("Top 5 Similar Jobs:")
-                for i, idx in enumerate(top_indices, 1):
-                    st.write(f"{i}. {df.iloc[idx]['job_title']}")
-                    if 'city' in df.columns and 'state' in df.columns:
-                        st.write(f"Location: {df.iloc[idx]['city']}, {df.iloc[idx]['state']}")
-                    if 'hourly_rate' in df.columns and not pd.isna(df.iloc[idx]['hourly_rate']):
-                        st.write(f"Hourly Rate: ${df.iloc[idx]['hourly_rate']}/hr")
-                    st.write(f"Similarity: {similarities[idx]:.2f}")
-                    st.write("---")
-                
+                st.subheader("Recommended Jobs:")
+                for i, rec in enumerate(recommendations, 1):
+                    st.markdown(f"""
+                    **{i}. {rec['job_title']}**
+                    - Predicted Category: {rec['predicted_category']}
+                    - Similarity Score: {rec['similarity_score']:.2f}
+                    - Description: {rec['job_description'][:200]}...
+                    """)
+                    
             except Exception as e:
-                st.error(f"Error testing model: {e}")
+                st.error(f"Error getting recommendations: {str(e)}")
     else:
-        st.warning("No trained model found. Please train the model first.")
+        st.info("Please train the model first before testing.")
 
 def knowledge_base_management():
     st.header("Knowledge Base Management")
