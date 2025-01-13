@@ -590,7 +590,6 @@ def admin_panel():
         "User Management",
         "Job Listings Overview",
         "System Statistics",
-        "ML Model Training"
     ]
     
     selected_option = st.selectbox("Admin Functions", admin_options)
