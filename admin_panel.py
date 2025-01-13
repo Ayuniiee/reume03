@@ -31,7 +31,6 @@ def create_supabase_client():
 class EnhancedMLRecommender:
     def __init__(self):
         self.model_path = 'ml_models'
-        self.tfidf_vectorizer = TfidfVectorizer(max_features=5000)
         self.tokenizer = None
         self.max_words = 10000
         self.max_len = 200
