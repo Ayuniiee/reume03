@@ -261,6 +261,7 @@ def main():
                 if st.button("💬 Chatbot", key="chat_button", use_container_width=True):
                     st.session_state["page"] = "chatbot"
                     st.rerun()
+
             elif st.session_state.get("user_type", "").lower() == "parent":
                 if st.button("↑  Upload", key="upload_button", use_container_width=True):
                     st.session_state["page"] = "upload"
@@ -330,7 +331,6 @@ def main():
         chatbot()
     elif st.session_state.get("page") == "admin_panel":
         admin_panel()
-
       
 if __name__ == "__main__":
     # Initialize session state variables if not already present
