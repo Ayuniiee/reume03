@@ -13,7 +13,6 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LSTM, Embedding, Dropout
-from sklearn.metrics.pairwise import cosine_similarity
 import tensorflow as tf
 import joblib
 import json
@@ -85,9 +84,6 @@ class EnhancedMLRecommender:
             # Ensure shapes match before calculating similarity
             if query_tfidf.shape[1] != job_vectors.shape[1]:
                 raise ValueError(f"Feature dimension mismatch: query has {query_tfidf.shape[1]} features, jobs have {job_vectors.shape[1]} features")
-            
-            # Calculate similarity scores
-            similarity_scores = cosine_similarity(query_tfidf, job_vectors)[0]
             
             # Initialize final scores
             final_scores = similarity_scores.copy()
