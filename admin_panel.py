@@ -35,9 +35,6 @@ class EnhancedMLRecommender:
     def __init__(self):
         self.model_path = 'ml_models'
         self.tfidf_vectorizer = TfidfVectorizer(max_features=5000)
-        self.neural_network = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500)
-        self.random_forest = RandomForestClassifier(n_estimators=100, max_depth=20)
-        self.label_encoder = LabelEncoder()
         self.tokenizer = None
         self.max_words = 10000
         self.max_len = 200
